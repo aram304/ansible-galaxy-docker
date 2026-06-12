@@ -1,6 +1,7 @@
+```yaml
 ---
 
-- name: Installeer benodigde pakketten
+- name: Install required packages
   ansible.builtin.apt:
     name:
       - ca-certificates
@@ -10,19 +11,19 @@
     state: present
     update_cache: true
 
-- name: Maak Docker keyring-map
+- name: Create Docker keyring directory
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
     mode: "0755"
 
-- name: Download officiële Docker GPG-sleutel
+- name: Download the official Docker GPG key
   ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
 
-- name: Voeg officiële Docker repository toe
+- name: Add the official Docker repository to APT sources
   ansible.builtin.apt_repository:
     repo: >-
       deb [signed-by=/etc/apt/keyrings/docker.asc]
@@ -32,7 +33,7 @@
     state: present
     update_cache: true
 
-- name: Installeer Docker Engine
+- name: Install Docker Engine
   ansible.builtin.apt:
     name:
       - docker-ce
@@ -42,40 +43,40 @@
       - docker-compose-plugin
     state: present
 
-- name: Start Docker en zet automatisch starten aan
+- name: Start Docker and enable it on boot
   ansible.builtin.service:
     name: docker
     state: started
     enabled: true
 
-- name: Controleer Docker-installatie
+- name: Verify Docker installation
   ansible.builtin.command:
     cmd: docker --version
   register: docker_version
   changed_when: false
   failed_when: false
 
-- name: Toon correcte Docker-installatie
+- name: Show successful Docker installation message
   ansible.builtin.debug:
-    msg: "Docker is succesvol geïnstalleerd"
+    msg: "Docker has been installed successfully"
   when: docker_version.rc == 0
 
-- name: Stop wanneer Docker niet correct is geïnstalleerd
+- name: Stop when Docker is not installed correctly
   ansible.builtin.fail:
-    msg: "Docker-installatie is mislukt: {{ docker_version.stderr }}"
+    msg: "Docker installation failed: {{ docker_version.stderr }}"
   when: docker_version.rc != 0
 
-- name: Kopieer de gebouwde Docker-image naar de VM
+- name: Copy the built Docker image to the VM
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/hello-world.tar"
     dest: /tmp/hello-world.tar
     mode: "0644"
 
-- name: Laad de Docker-image
+- name: Load the Docker image
   community.docker.docker_image_load:
     path: /tmp/hello-world.tar
 
-- name: Start de Hello World-container
+- name: Start the Hello World container
   community.docker.docker_container:
     name: hello-world
     image: hello-world:latest
@@ -84,7 +85,7 @@
     published_ports:
       - "8080:80"
 
-- name: Test de Hello World-container
+- name: Test the Hello World container
   ansible.builtin.uri:
     url: http://127.0.0.1:8080
     method: GET
@@ -97,12 +98,13 @@
   changed_when: false
   failed_when: false
 
-- name: Toon succesvolle containercontrole
+- name: Show successful container check message
   ansible.builtin.debug:
-    msg: "De Hello World-container is succesvol gestart"
+    msg: "The Hello World container has been started successfully"
   when: hello_world_response.status | default(0) == 200
 
-- name: Stop wanneer de Hello World-container niet reageert
+- name: Stop when the Hello World container does not respond
   ansible.builtin.fail:
-    msg: "De Hello World-container is niet bereikbaar"
+    msg: "The Hello World container is not reachable"
   when: hello_world_response.status | default(0) != 200
+```
