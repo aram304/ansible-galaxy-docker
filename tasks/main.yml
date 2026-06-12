@@ -1,6 +1,4 @@
-```yaml
 ---
-
 - name: Install required packages
   ansible.builtin.apt:
     name:
@@ -107,4 +105,4 @@
   ansible.builtin.fail:
     msg: "The Hello World container is not reachable"
   when: hello_world_response.status | default(0) != 200
-```
+
