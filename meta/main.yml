@@ -1,16 +1,14 @@
 galaxy_info:
   role_name: docker
-  namespace: aramairapetian
-  author: Aram Airapetian
+  namespace: aram304
+  author: Ara Airapetian
   description: Installs Docker and deploys a Hello World container on Ubuntu hosts.
   license: MIT
   min_ansible_version: "2.14"
 
   platforms:
     - name: Ubuntu
-      versions:
-        - jammy
-        - noble
+  
 
   galaxy_tags:
     - docker
