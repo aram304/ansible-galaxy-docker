@@ -1,0 +1,108 @@
+---
+
+- name: Installeer benodigde pakketten
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - python3
+      - python3-requests
+    state: present
+    update_cache: true
+
+- name: Maak Docker keyring-map
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download officiële Docker GPG-sleutel
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Voeg officiële Docker repository toe
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu
+      {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present
+    update_cache: true
+
+- name: Installeer Docker Engine
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+- name: Start Docker en zet automatisch starten aan
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Controleer Docker-installatie
+  ansible.builtin.command:
+    cmd: docker --version
+  register: docker_version
+  changed_when: false
+  failed_when: false
+
+- name: Toon correcte Docker-installatie
+  ansible.builtin.debug:
+    msg: "Docker is succesvol geïnstalleerd"
+  when: docker_version.rc == 0
+
+- name: Stop wanneer Docker niet correct is geïnstalleerd
+  ansible.builtin.fail:
+    msg: "Docker-installatie is mislukt: {{ docker_version.stderr }}"
+  when: docker_version.rc != 0
+
+- name: Kopieer de gebouwde Docker-image naar de VM
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/hello-world.tar"
+    dest: /tmp/hello-world.tar
+    mode: "0644"
+
+- name: Laad de Docker-image
+  community.docker.docker_image_load:
+    path: /tmp/hello-world.tar
+
+- name: Start de Hello World-container
+  community.docker.docker_container:
+    name: hello-world
+    image: hello-world:latest
+    state: started
+    restart_policy: always
+    published_ports:
+      - "8080:80"
+
+- name: Test de Hello World-container
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080
+    method: GET
+    return_content: true
+    status_code: 200
+  register: hello_world_response
+  retries: 5
+  delay: 2
+  until: hello_world_response.status | default(0) == 200
+  changed_when: false
+  failed_when: false
+
+- name: Toon succesvolle containercontrole
+  ansible.builtin.debug:
+    msg: "De Hello World-container is succesvol gestart"
+  when: hello_world_response.status | default(0) == 200
+
+- name: Stop wanneer de Hello World-container niet reageert
+  ansible.builtin.fail:
+    msg: "De Hello World-container is niet bereikbaar"
+  when: hello_world_response.status | default(0) != 200
