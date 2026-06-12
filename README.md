@@ -1,27 +1,30 @@
 # Ansible Role: Docker
 
-Deze Ansible-role installeert Docker op Ubuntu-hosts en start een eenvoudige Hello World-container. De role wordt gebruikt binnen de les-06 CI/CD-opdracht om automatisch een Docker-container uit te rollen op zowel een Azure VM als een ESXi VM.
+This Ansible role installs Docker on a Linux host and deploys a simple Hello World container. The role is mainly designed for Ubuntu-based Linux systems.
 
-## Doel
+It is used in a CI/CD workflow where a Docker image is built, saved as a `.tar` file, copied to the target Linux hosts, loaded into Docker, and started as a running container.
 
-Het doel van deze role is om Docker automatisch te installeren, een vooraf gebouwde Docker-image te laden en daarna een Hello World-container te starten op poort `8080`.
+## Purpose
 
-De role voert ook een controle uit om te bevestigen dat de container bereikbaar is.
+The purpose of this role is to automate the installation of Docker and the deployment of a containerized Hello World application on Linux hosts.
+
+This role demonstrates how Ansible can be used for configuration management and application deployment on multiple Linux servers, such as an Azure Linux VM and an ESXi Linux VM.
 
 ## Requirements
 
-Deze role is bedoeld voor Ubuntu-hosts.
+This role is designed for Linux hosts, specifically Ubuntu-based systems.
 
-Benodigdheden:
+Required:
 
 * Ansible
-* Ubuntu host
-* SSH-toegang tot de doelhost
+* Linux target host
+* Ubuntu-based operating system
+* SSH access to the target host
 * `become: true`
-* Ansible facts, omdat `ansible_distribution_release` wordt gebruikt
-* Collection `community.docker`
+* The `community.docker` collection
+* A pre-built Docker image saved as `hello-world.tar`
 
-Installeer de benodigde collection met:
+Install the required collection with:
 
 ```bash
 ansible-galaxy collection install community.docker
@@ -29,65 +32,54 @@ ansible-galaxy collection install community.docker
 
 ## Role Variables
 
-De volgende variabele staat standaard in `defaults/main.yml`:
+The following variable is defined in `defaults/main.yml`:
 
 ```yaml
 docker_users:
   - testuser
 ```
 
-Deze variabele kan gebruikt worden om aan te geven welke gebruiker met Docker moet werken. In de huidige versie wordt Docker vooral systeemwijd geïnstalleerd en wordt de container via Ansible gestart.
+This variable can be used to define which users should be allowed to work with Docker.
 
-## Wat de role doet
+## What This Role Does
 
-De role voert de volgende stappen uit:
+This role performs the following tasks:
 
-1. Installeert benodigde pakketten zoals `ca-certificates`, `curl`, `python3` en `python3-requests`.
-2. Maakt de Docker keyring-map aan.
-3. Downloadt de officiële Docker GPG-sleutel.
-4. Voegt de officiële Docker repository toe.
-5. Installeert Docker Engine en bijbehorende componenten.
-6. Start de Docker-service en zet automatisch starten aan.
-7. Controleert of Docker correct is geïnstalleerd.
-8. Kopieert `hello-world.tar` naar de host.
-9. Laadt de Docker-image.
-10. Start de Hello World-container.
-11. Controleert of de container bereikbaar is via `http://127.0.0.1:8080`.
+1. Installs required packages.
+2. Creates the Docker keyring directory.
+3. Downloads the official Docker GPG key.
+4. Adds the official Docker APT repository.
+5. Installs Docker Engine and related components.
+6. Starts and enables the Docker service.
+7. Verifies the Docker installation.
+8. Copies the pre-built Docker image to the Linux host.
+9. Loads the Docker image.
+10. Starts the Hello World container.
+11. Checks whether the container is reachable on port `8080`.
 
-## Verwachte Docker-image
+## Expected Docker Image
 
-De role verwacht dat er al een Docker-image als tar-bestand bestaat op deze locatie:
+This role expects the Docker image tar file to be available at:
 
 ```text
 {{ playbook_dir }}/hello-world.tar
 ```
 
-In de les-06 workflow wordt deze image vooraf gebouwd en opgeslagen met:
+In the CI/CD workflow, the image can be created with:
 
 ```bash
+docker build -t hello-world:latest ./docker
 docker save hello-world:latest -o ansible/hello-world.tar
 ```
 
-Daarna kan Ansible deze image naar de VM kopiëren en daar laden.
+Ansible then copies this image to the target Linux host and loads it into Docker.
 
 ## Example Playbook
 
-Voorbeeld van het gebruik van deze role:
+Example usage with the role installed from Ansible Galaxy:
 
 ```yaml
-- name: Docker installeren en Hello World-container starten
-  hosts: azure:esxi
-  become: true
-  gather_facts: true
-
-  roles:
-    - Docker
-```
-
-Wanneer de role via Ansible Galaxy is geïnstalleerd, kan de role bijvoorbeeld zo worden aangeroepen:
-
-```yaml
-- name: Docker installeren en Hello World-container starten
+- name: Install Docker and deploy Hello World container
   hosts: azure:esxi
   become: true
   gather_facts: true
@@ -96,23 +88,23 @@ Wanneer de role via Ansible Galaxy is geïnstalleerd, kan de role bijvoorbeeld z
     - aramairapetian.docker
 ```
 
-## Installatie via Ansible Galaxy
+## Installation
 
-Na publicatie op Ansible Galaxy kan de role worden geïnstalleerd met:
+Install the role from Ansible Galaxy with:
 
 ```bash
 ansible-galaxy role install aramairapetian.docker
 ```
 
-De informatie van de gepubliceerde role kan gecontroleerd worden met:
+Check the role information with:
 
 ```bash
 ansible-galaxy role info aramairapetian.docker
 ```
 
-## Gebruik in requirements.yaml
+## Usage with requirements.yaml
 
-De role kan reproduceerbaar worden geïnstalleerd via `requirements.yaml`:
+The role can also be installed through a `requirements.yaml` file:
 
 ```yaml
 ---
@@ -121,29 +113,28 @@ roles:
 
 collections:
   - name: community.docker
-  - name: ansible.posix
 ```
 
-Installeren kan daarna met:
+Install the requirements with:
 
 ```bash
 ansible-galaxy install -r requirements.yaml
 ```
 
-## Controle
+## Verification
 
-Na uitvoering controleert de role of:
+After the role has run successfully:
 
-* Docker correct is geïnstalleerd;
-* de Docker-service actief is;
-* de Hello World-image geladen is;
-* de container gestart is;
-* de webpagina bereikbaar is op poort `8080`.
+* Docker is installed on the Linux host.
+* The Docker service is running.
+* The Hello World image is loaded.
+* The Hello World container is running.
+* The container is reachable at `http://127.0.0.1:8080`.
 
 ## License
 
 MIT
 
-## Author
+## Author Information
 
 Aram Airapetian
