@@ -131,6 +131,11 @@ After the role has run successfully:
 * The Hello World container is running.
 * The container is reachable at `http://127.0.0.1:8080`.
 
+## License
+
+ MIT
+
+
 ## Author Information
 
 Ara Airapetian
